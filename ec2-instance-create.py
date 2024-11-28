@@ -3,6 +3,7 @@ import os
 import sys
 from botocore.exceptions import ClientError
 
+
 def create_key_pair(ec2, key_name):
     try:
         ec2.describe_key_pairs(KeyNames=[key_name])
@@ -15,22 +16,20 @@ def create_key_pair(ec2, key_name):
         os.chmod(f"{key_name}.pem", 0o400)
         print(f"New Key Pair created and saved as {key_name}.pem")
 
+
 def get_or_create_security_group(ec2, group_input):
     security_group_id = None
 
-    # Check if the input is a Security Group Name or ID
     try:
         if group_input.startswith("sg-"):
-            # Treat input as Security Group ID
             response = ec2.describe_security_groups(GroupIds=[group_input])
             security_group_id = response['SecurityGroups'][0]['GroupId']
             print(f"Security Group ID '{group_input}' found. Using the existing group.")
         else:
-            # Treat input as Security Group Name
             response = ec2.describe_security_groups(GroupNames=[group_input])
             security_group_id = response['SecurityGroups'][0]['GroupId']
             print(f"Security Group Name '{group_input}' found. Using the existing group.")
-    except ClientError as e:
+    except ClientError:
         print(f"Security Group '{group_input}' does not exist. Creating a new one...")
         response = ec2.create_security_group(GroupName=group_input, Description="Security group for EC2 instance")
         security_group_id = response['GroupId']
@@ -38,6 +37,7 @@ def get_or_create_security_group(ec2, group_input):
         print(f"New Security Group created with ID: {security_group_id}")
 
     return security_group_id
+
 
 def main():
     print("""
@@ -61,24 +61,27 @@ As part of DevOps Training, this script will help you create an EC2 Instance!
 
     # Instance Type Selection
     print("Select Instance Type:")
-    print("1 - [2vCPU and 2GiB RAM - t3.small] TomcatServer ")
-    print("2 - [2vCPU and 4GiB - t3.medium] Jenkins_Server | Sonarqube | Jfrog | Docker | K8S ")
-    print("3 - [2vCPU and 8GiB - t3.large] Kubernetes Setup ")
+    print("1 - [2vCPU and 2GiB RAM - t3.small] TomcatServer")
+    print("2 - [2vCPU and 4GiB - t3.medium] Jenkins_Server | Sonarqube | Jfrog | Docker | K8S")
+    print("3 - [2vCPU and 8GiB - t3.large] Kubernetes Setup")
     instance_type_choice = input("Enter the number corresponding to the desired instance type: ")
 
-    # Map user choice to the instance type
     instance_type_map = {
         "1": "t3.small",
         "2": "t3.medium",
         "3": "t3.large"
     }
-    instance_type = instance_type_map.get(instance_type_choice, "t3.small")  # Default to t3.small if invalid input
-
+    instance_type = instance_type_map.get(instance_type_choice, "t3.small")
     print(f"Selected Instance Type: {instance_type}")
 
-    # AMI ID (default value)
-    ami_id = "ami-05edb7c94b324f73c"
-    print(f"Using default AMI ID: {ami_id}")
+    # AMI ID Prompt
+    default_ami_id = "ami-05edb7c94b324f73c"
+    ami_id = input(f"Enter AMI ID (default: {default_ami_id}): ").strip()
+
+    if not ami_id:  # Use default if user doesn't provide input
+        ami_id = default_ami_id
+
+    print(f"Using AMI ID: {ami_id}")
 
     # Instance Name
     instance_name = input("Enter Name for the EC2 Instance: ")
@@ -150,6 +153,7 @@ As part of DevOps Training, this script will help you create an EC2 Instance!
     except Exception as e:
         print(f"Error launching EC2 instance(s): {e}")
         sys.exit(1)
+
 
 if __name__ == "__main__":
     main()
